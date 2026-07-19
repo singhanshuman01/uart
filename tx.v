@@ -57,7 +57,7 @@ always @(posedge clk or negedge rst) begin
     if(!rst) shift_reg <= 1;
     else begin
         if(baud) begin
-            if(state == IDLE && !fifo_empty) shift_reg <= data;
+            if(state == START) shift_reg <= data;
             else if(state == DATA) shift_reg <= shift_reg >> 1;
         end
     end
