@@ -1,3 +1,5 @@
+// Code your testbench here
+// or browse Examples
 `timescale 1ns/1ps
 
 interface fifo_if(input logic clk);
@@ -33,7 +35,7 @@ constraint c_rst { rst dist {0:=1, 1:=19};}
 
 endclass
 
-class generator #(transaction);
+class generator;
 // transaction tr;
 mailbox #(transaction) gen2drv;
 event drvdone;
@@ -57,7 +59,7 @@ endtask
 
 endclass
 
-class driver #(transaction);
+class driver;
 virtual fifo_if fif;
 mailbox #(transaction) gen2drv;
 event drvdone;
@@ -80,13 +82,13 @@ task run();
         fif.wdata <= tr.wdata;
 
         @(posedge fif.clk);
-        |->drvdone;
+        ->drvdone;
     end
 endtask
 
 endclass
 
-class monitor #(transaction);
+class monitor;
 mailbox #(transaction) mon2scb;
 virtual fifo_if fif;
 
@@ -101,7 +103,7 @@ task run();
         transaction tr;
         tr = new();
 
-        @(negedge clk);
+      @(negedge fif.clk);
         tr.wen <= fif.wen;
         tr.ren <= fif.ren;
         tr.wdata <= fif.wdata;
@@ -120,7 +122,7 @@ endtask
 endclass
 
 
-class scoreboard #(transaction);
+class scoreboard;
 
 mailbox #(transaction) mon2scb;
 
