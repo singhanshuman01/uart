@@ -67,10 +67,15 @@ always @(posedge clk or negedge rst) begin
         bit_counter <= 0;
         baud_counter <= 0;
     end else if(baud) begin
-        if(state==START && baud_counter==7) baud_counter <= 0;
-        else baud_counter <= baud_counter + 1'b1;
-
-        if(state == RECEIVE && baud_counter==15) bit_counter <= bit_counter+1'b1;
+        if(state==START && baud_counter==7) begin
+            baud_counter <= 0;
+        end else if (state == RECEIVE && baud_counter==15) begin
+            bit_counter <= bit_counter+1'b1;
+        end else if(state == START || state == RECEIVE) begin
+            baud_counter <= baud_counter + 1'b1;
+        end else begin
+            baud_counter <= 0;
+        end
     end
 end
 

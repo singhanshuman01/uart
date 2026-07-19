@@ -45,26 +45,32 @@ always @(posedge clk or negedge rst) begin
     else if(baud) begin
         if(state==DATA) begin
             if(counter == 7) counter <= 0;
-            else counter = counter+1'b1;
+            else counter <= counter+1'b1;
         end else begin
             counter <= 0;
         end
     end
 end
- 
+
 //shift logic
 always @(posedge clk or negedge rst) begin
     if(!rst) shift_reg <= 1;
     else begin
-        if(state == IDLE && !fifo_empty) shift_reg <= data;
-        else if(state == DATA) shift_reg <= shift_reg >> 1;
+        if(baud) begin
+            if(state == IDLE && !fifo_empty) shift_reg <= data;
+            else if(state == DATA) shift_reg <= shift_reg >> 1;
+        end
     end
 end
 
 //output logic
 always @(*) begin
     case (state)
-        IDLE: {tx, ren} = 2'b11;
+        IDLE: begin
+            tx = 1;
+            if(baud && !fifo_empty) ren = 1;
+            else ren = 0;
+        end
         START: {tx, ren} = 2'b00;
         DATA: {tx, ren} = {shift_reg[0], 1'b0};
         STOP: {tx, ren} = 2'b10;
