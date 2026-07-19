@@ -13,11 +13,6 @@ interface fifo_if(input logic clk);
 
     logic [7:0] rdata;
 
-    clocking sb @(posedge clk);
-        input rdata;
-        output ren;
-        output wen;
-    endclocking
 endinterface //u_if
 
 class transaction;
@@ -51,9 +46,10 @@ task run();
         tr = new();
 
         assert(tr.randomize());
+	$display("[GENERATOR] Randomized transaction %p", tr);
         gen2drv.put(tr);
 
-        wait(drvdone.triggered);
+        @(drvdone);
     end
 endtask
 
@@ -76,10 +72,12 @@ task run();
         transaction tr;
         gen2drv.get(tr);
 
-        fif.rst <= tr.rst;
-        fif.wen <= tr.wen;
-        fif.ren <= tr.ren;
-        fif.wdata <= tr.wdata;
+        // @(posedge fif.clk);
+        fif.rst = tr.rst;
+        fif.wen = tr.wen;
+        fif.ren = tr.ren;
+        fif.wdata = tr.wdata;
+	$display("[DRIVER] Wrote transaction %p", tr);
 
         @(posedge fif.clk);
         ->drvdone;
@@ -103,16 +101,17 @@ task run();
         transaction tr;
         tr = new();
 
-      @(negedge fif.clk);
-        tr.wen <= fif.wen;
-        tr.ren <= fif.ren;
-        tr.wdata <= fif.wdata;
-        tr.rst <= fif.rst;
+      @(posedge fif.clk); #1;
+        tr.wen = fif.wen;
+        tr.ren = fif.ren;
+        tr.wdata = fif.wdata;
+        tr.rst = fif.rst;
 
-        tr.rdata <= fif.rdata;
-        tr.full <= fif.full;
-        tr.empty <= fif.empty;
-
+        tr.rdata = fif.rdata;
+        tr.full = fif.full;
+        tr.empty = fif.empty;
+	
+	$display("[MONITOR] Received transaction %p", tr);
         mon2scb.put(tr);
 
     end
@@ -142,6 +141,7 @@ task run();
     forever begin
         transaction tr;
         mon2scb.get(tr);
+	$display("[SCOREBOARD] Received transaction %p", tr);
         if(tr.wen && !tr.full) begin
             d_queue.push_back(tr.wdata);
             $display("Added %0h to queue", tr.wdata);
@@ -152,9 +152,9 @@ task run();
                 fail++;
                 $display("FAILED: DUT allowed read even though queue is empty!");
             end else begin
-                exp_data = queue.pop_front();
+                exp_data = d_queue.pop_front();
 
-                if(tx.rdata === exp_data) begin
+                if(tr.rdata === exp_data) begin
                     pass++;
                     $display("PASSED: read data matched queue data");
                 end else begin
@@ -164,12 +164,12 @@ task run();
             end
         end
 
-        if(queue.size()==0 && !tr.empty) begin
+        if(d_queue.size()==0 && !tr.empty) begin
             fail++;
             $display("FAILED: Queue empty but DUT empty not HIGH");
         end
 
-        if(queue.size()==depth && !tr.full) begin
+        if(d_queue.size()==depth && !tr.full) begin
             fail++;
             $display("FAILED: Queue full but DUT full not HIGH");
         end
@@ -260,12 +260,13 @@ initial begin
 
     t0.run();
 
-    #100 $finish;
 end
 
 initial begin
     $dumpfile("fifo.vcd");
     $dumpvars;
+    
+    #100 $finish;
 end
 
 endmodule
