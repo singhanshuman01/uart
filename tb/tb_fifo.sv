@@ -208,7 +208,8 @@ task run();
         drv.run();
         mon.run();
         scb.run();
-    join
+        repeat(50) @(posedge fif.clk);
+    join_any
 endtask
 
 endclass
@@ -266,7 +267,7 @@ initial begin
     $dumpfile("fifo.vcd");
     $dumpvars;
     
-    #100 $finish;
+    // #100 $finish;
 end
 
 endmodule
