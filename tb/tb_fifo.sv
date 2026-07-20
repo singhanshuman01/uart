@@ -144,7 +144,7 @@ task run();
 	$display("[SCOREBOARD] Received transaction %p", tr);
         if(tr.wen && !tr.full) begin
             d_queue.push_back(tr.wdata);
-            $display("Added %0h to queue", tr.wdata);
+            $display("Added %0d to queue", tr.wdata);
         end
 
         if(tr.ren && !tr.empty) begin
